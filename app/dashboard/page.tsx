@@ -1,5 +1,8 @@
+// app/dashboard/page.tsx
 "use client";
+
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { CSVLink } from "react-csv";
 import clsx from "clsx";
 
@@ -11,6 +14,7 @@ export default function Dashboard() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [pageNum, setPageNum] = useState(1);
   const pageSize = 10;
+  const router = useRouter();
 
   useEffect(() => {
     fetch("/api/contracts")
@@ -19,7 +23,7 @@ export default function Dashboard() {
       .catch(() => setAllContracts([]));
   }, []);
 
-  // 1) Filter
+  // Filtering…
   const filtered = allContracts.filter((c) => {
     const byRegion = !regionFilter || c.region.name === regionFilter;
     const bySearch =
@@ -29,30 +33,26 @@ export default function Dashboard() {
     return byRegion && bySearch;
   });
 
-  // 2) Sort
+  // Sorting…
   const sorted = [...filtered].sort((a, b) => {
-    const aVal = a[sortKey];
-    const bVal = b[sortKey];
+    const aVal = a[sortKey], bVal = b[sortKey];
     if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
     if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
     return 0;
   });
 
-  // 3) Paginate
+  // Pagination…
   const totalPages = Math.ceil(sorted.length / pageSize);
   const paginated = sorted.slice((pageNum - 1) * pageSize, pageNum * pageSize);
 
-  // Sort handler
   const handleSort = (key: string) => {
-    if (sortKey === key) {
-      setSortOrder((o) => (o === "asc" ? "desc" : "asc"));
-    } else {
+    if (sortKey === key) setSortOrder((o) => (o === "asc" ? "desc" : "asc"));
+    else {
       setSortKey(key);
       setSortOrder("asc");
     }
   };
 
-  // Region dropdown options
   const regions = Array.from(new Set(allContracts.map((c) => c.region.name)));
 
   return (
@@ -119,6 +119,7 @@ export default function Dashboard() {
             {paginated.map((c) => (
               <tr
                 key={c.id}
+                onClick={() => router.push(`/contracts/${c.id}`)}
                 className={clsx(
                   "border-t border-gray-700 hover:bg-gray-800",
                   !c.is_fulfilled && "bg-gray-800"
