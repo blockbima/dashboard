@@ -1,0 +1,1 @@
+export default function Home(){return(<div className="text-center py-20"><a href="/dashboard" className="text-blue-600 underline">Go to Dashboard</a></div>);}

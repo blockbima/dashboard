@@ -1,0 +1,1 @@
+{"compilerOptions":{"target":"es2022","module":"esnext","lib":["dom","dom.iterable","esnext"],"jsx":"preserve","strict":true,"moduleResolution":"node","forceConsistentCasingInFileNames":true,"noEmit":true,"incremental":true,"resolveJsonModule":true,"isolatedModules":true,"esModuleInterop":true},"include":["next-env.d.ts","**/*.ts","**/*.tsx"],"exclude":["node_modules"]}
