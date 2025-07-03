@@ -23,36 +23,45 @@ export default function Dashboard() {
       .catch(() => setAllContracts([]));
   }, []);
 
-  // Filtering…
+  // Only include contracts created on or after June 20, 2025
+  const cutoffDate = new Date("2025-06-20");
+
+  // 1) Filter
   const filtered = allContracts.filter((c) => {
+    const createdDate = new Date(c.created_at);
+    const afterCutoff = createdDate >= cutoffDate;
     const byRegion = !regionFilter || c.region.name === regionFilter;
     const bySearch =
       !searchTerm ||
       c.id.includes(searchTerm) ||
       c.beneficiaries.some((b: string) => b.includes(searchTerm));
-    return byRegion && bySearch;
+    return afterCutoff && byRegion && bySearch;
   });
 
-  // Sorting…
+  // 2) Sort
   const sorted = [...filtered].sort((a, b) => {
-    const aVal = a[sortKey], bVal = b[sortKey];
+    const aVal = a[sortKey];
+    const bVal = b[sortKey];
     if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
     if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
     return 0;
   });
 
-  // Pagination…
+  // 3) Paginate
   const totalPages = Math.ceil(sorted.length / pageSize);
   const paginated = sorted.slice((pageNum - 1) * pageSize, pageNum * pageSize);
 
+  // Sort handler
   const handleSort = (key: string) => {
-    if (sortKey === key) setSortOrder((o) => (o === "asc" ? "desc" : "asc"));
-    else {
+    if (sortKey === key) {
+      setSortOrder((o) => (o === "asc" ? "desc" : "asc"));
+    } else {
       setSortKey(key);
       setSortOrder("asc");
     }
   };
 
+  // Region dropdown options
   const regions = Array.from(new Set(allContracts.map((c) => c.region.name)));
 
   return (
