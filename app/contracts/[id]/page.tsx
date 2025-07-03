@@ -20,8 +20,12 @@ export default function ContractDetail() {
       .catch((e) => setError(e.message));
   }, [id]);
 
-  if (error) return <div className="p-6 text-red-400">Error: {error}</div>;
-  if (!contract) return <div className="p-6">Loading...</div>;
+  if (error) {
+    return <div className="p-6 text-red-400">Error fetching contract: {error}</div>;
+  }
+  if (!contract) {
+    return <div className="p-6 text-gray-100">Loading contract details...</div>;
+  }
 
   return (
     <div className="bg-gray-900 text-gray-100 min-h-screen p-6">
@@ -40,8 +44,7 @@ export default function ContractDetail() {
         <strong>Total Premium:</strong> {contract.total_premium}
       </p>
       <p>
-        <strong>Status:</strong>{" "}
-        {contract.is_fulfilled ? "Settled" : "Active"}
+        <strong>Status:</strong> {contract.is_fulfilled ? "Settled" : "Active"}
       </p>
       <p>
         <strong>Maturity Date:</strong>{" "}
@@ -59,7 +62,7 @@ export default function ContractDetail() {
         ))}
       </ul>
 
-      {contract.report_info && (
+      {Array.isArray(contract.report_info?.daily_data) && contract.report_info.daily_data.length > 0 && (
         <>
           <h3 className="mt-6 text-xl font-semibold">Report Info</h3>
           <table className="min-w-full border mt-2">
