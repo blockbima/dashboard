@@ -110,6 +110,7 @@ export default function Dashboard() {
                 { key: "region", label: "Region" },
                 { key: "beneficiaries", label: "Beneficiaries" },
                 { key: "total_premium", label: "Premium" },
+                { key: "total_claim_amount", label: "Payout" },   // new column
                 { key: "is_fulfilled", label: "Status" },
                 { key: "created_at", label: "Created At" },
               ].map(({ key, label }) => (
@@ -137,6 +138,7 @@ export default function Dashboard() {
                 <td className="p-2">{c.region.name}</td>
                 <td className="p-2">{c.beneficiaries.length}</td>
                 <td className="p-2">{c.total_premium}</td>
+                <td className="p-2">{c.total_claim_amount}</td> {/* payout */}
                 <td className="p-2">
                   {c.is_fulfilled ? "Settled" : "Active"}
                 </td>
