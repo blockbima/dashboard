@@ -3,8 +3,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { CSVLink } from "react-csv";
 import clsx from "clsx";
+import Infographics from "@/components/Infographics";
+
+// Dynamically load MapPreview (no SSR)
+const MapPreview = dynamic(() => import("@/components/MapPreview"), { ssr: false });
 
 export default function Dashboard() {
   const [allContracts, setAllContracts] = useState<any[]>([]);
@@ -23,13 +28,13 @@ export default function Dashboard() {
       .catch(() => setAllContracts([]));
   }, []);
 
-  // Only include contracts created on or after June 20, 2025
+  // Cutoff filter
   const cutoffDate = new Date("2025-06-20");
 
   // 1) Filter
   const filtered = allContracts.filter((c) => {
-    const createdDate = new Date(c.created_at);
-    const afterCutoff = createdDate >= cutoffDate;
+    const created = new Date(c.created_at);
+    const afterCutoff = created >= cutoffDate;
     const byRegion = !regionFilter || c.region.name === regionFilter;
     const bySearch =
       !searchTerm ||
@@ -40,8 +45,7 @@ export default function Dashboard() {
 
   // 2) Sort
   const sorted = [...filtered].sort((a, b) => {
-    const aVal = a[sortKey];
-    const bVal = b[sortKey];
+    const aVal = a[sortKey], bVal = b[sortKey];
     if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
     if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
     return 0;
@@ -53,15 +57,13 @@ export default function Dashboard() {
 
   // Sort handler
   const handleSort = (key: string) => {
-    if (sortKey === key) {
-      setSortOrder((o) => (o === "asc" ? "desc" : "asc"));
-    } else {
+    if (sortKey === key) setSortOrder((o) => (o === "asc" ? "desc" : "asc"));
+    else {
       setSortKey(key);
       setSortOrder("asc");
     }
   };
 
-  // Region dropdown options
   const regions = Array.from(new Set(allContracts.map((c) => c.region.name)));
 
   return (
@@ -71,25 +73,17 @@ export default function Dashboard() {
         <input
           placeholder="Search by ID or beneficiary"
           value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-            setPageNum(1);
-          }}
+          onChange={(e) => { setSearchTerm(e.target.value); setPageNum(1); }}
           className="bg-gray-800 text-gray-100 border border-gray-700 placeholder-gray-500 px-2 py-1 rounded"
         />
         <select
           value={regionFilter}
-          onChange={(e) => {
-            setRegionFilter(e.target.value);
-            setPageNum(1);
-          }}
+          onChange={(e) => { setRegionFilter(e.target.value); setPageNum(1); }}
           className="bg-gray-800 text-gray-100 border border-gray-700 px-2 py-1 rounded"
         >
           <option value="">All Regions</option>
           {regions.map((r) => (
-            <option key={r} value={r}>
-              {r}
-            </option>
+            <option key={r} value={r}>{r}</option>
           ))}
         </select>
         <CSVLink
@@ -110,7 +104,7 @@ export default function Dashboard() {
                 { key: "region", label: "Region" },
                 { key: "beneficiaries", label: "Beneficiaries" },
                 { key: "total_premium", label: "Premium" },
-                { key: "total_claim_amount", label: "Payout" },   // new column
+                { key: "total_claim_amount", label: "Payout" },
                 { key: "is_fulfilled", label: "Status" },
                 { key: "created_at", label: "Created At" },
               ].map(({ key, label }) => (
@@ -119,8 +113,7 @@ export default function Dashboard() {
                   className="p-2 text-left text-gray-100 cursor-pointer"
                   onClick={() => handleSort(key)}
                 >
-                  {label}
-                  {sortKey === key ? (sortOrder === "asc" ? " ▲" : " ▼") : ""}
+                  {label}{sortKey === key ? (sortOrder === "asc" ? " ▲" : " ▼") : ""}
                 </th>
               ))}
             </tr>
@@ -138,13 +131,9 @@ export default function Dashboard() {
                 <td className="p-2">{c.region.name}</td>
                 <td className="p-2">{c.beneficiaries.length}</td>
                 <td className="p-2">{c.total_premium}</td>
-                <td className="p-2">{c.total_claim_amount}</td> {/* payout */}
-                <td className="p-2">
-                  {c.is_fulfilled ? "Settled" : "Active"}
-                </td>
-                <td className="p-2">
-                  {new Date(c.created_at).toLocaleDateString()}
-                </td>
+                <td className="p-2">{c.total_claim_amount}</td>
+                <td className="p-2">{c.is_fulfilled ? "Settled" : "Active"}</td>
+                <td className="p-2">{new Date(c.created_at).toLocaleDateString()}</td>
               </tr>
             ))}
           </tbody>
@@ -160,9 +149,7 @@ export default function Dashboard() {
         >
           Prev
         </button>
-        <span>
-          Page {pageNum} of {totalPages}
-        </span>
+        <span>Page {pageNum} of {totalPages}</span>
         <button
           disabled={pageNum === totalPages}
           onClick={() => setPageNum((p) => p + 1)}
@@ -170,6 +157,12 @@ export default function Dashboard() {
         >
           Next
         </button>
+      </div>
+
+      {/* Map & Infographics */}
+      <div className="grid grid-cols-2 gap-6">
+        <MapPreview contracts={filtered} />
+        <Infographics contracts={filtered} />
       </div>
     </div>
   );
