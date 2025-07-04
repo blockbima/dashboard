@@ -16,29 +16,32 @@ const regionCoordinates: Record<string, { lat: number; lng: number }> = {
 };
 
 export default function MapPreview({ contracts }: { contracts: Contract[] }) {
-  // Aggregate beneficiaries per region
+  // Aggregate beneficiary counts per region
   const regionMap: Record<string, { coords: { lat: number; lng: number }; count: number }> = {};
   contracts.forEach((c) => {
     const name = c.region.name;
     const coords = regionCoordinates[name];
     if (!coords) return;
-    regionMap[name] = regionMap[name] || { coords, count: 0 };
+    if (!regionMap[name]) regionMap[name] = { coords, count: 0 };
     regionMap[name].count += c.beneficiaries.length;
   });
 
   const regions = Object.values(regionMap);
-  const center = regions.length
-    ? [regions[0].coords.lat, regions[0].coords.lng] as [number, number]
+  const center: [number, number] = regions.length
+    ? [regions[0].coords.lat, regions[0].coords.lng]
     : [-1.2921, 36.8219];
 
   return (
-    <MapContainer center={center} zoom={7} style={{ height: "400px", width: "100%" }}>
-      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-      {regions.map(({ coords, count }) => (
-        <Marker key={`${coords.lat}-${coords.lng}`} position={[coords.lat, coords.lng]}>
-          <Popup>{count} beneficiaries</Popup>
-        </Marker>
-      ))}
-    </MapContainer>
+    <>
+      {/* @ts-ignore */}
+      <MapContainer center={center} zoom={7} style={{ height: "400px", width: "100%" }}>
+        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        {regions.map(({ coords, count }) => (
+          <Marker key={`${coords.lat}-${coords.lng}`} position={[coords.lat, coords.lng]}>
+            <Popup>{count} beneficiaries</Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+    </>
   );
 }
