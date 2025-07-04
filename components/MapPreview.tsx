@@ -1,9 +1,8 @@
+// components/MapPreview.tsx
 "use client";
 
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import MarkerClusterGroup from "react-leaflet-markercluster";
 import "leaflet/dist/leaflet.css";
-import "react-leaflet-markercluster/dist/styles.min.css";
 
 interface Contract {
   region: { name: string };
@@ -23,32 +22,23 @@ export default function MapPreview({ contracts }: { contracts: Contract[] }) {
     const name = c.region.name;
     const coords = regionCoordinates[name];
     if (!coords) return;
-    if (!regionMap[name]) {
-      regionMap[name] = { coords, count: c.beneficiaries.length };
-    } else {
-      regionMap[name].count += c.beneficiaries.length;
-    }
+    regionMap[name] = regionMap[name] || { coords, count: 0 };
+    regionMap[name].count += c.beneficiaries.length;
   });
 
   const regions = Object.values(regionMap);
   const center = regions.length
-    ? [regions[0].coords.lat, regions[0].coords.lng]
+    ? [regions[0].coords.lat, regions[0].coords.lng] as [number, number]
     : [-1.2921, 36.8219];
 
   return (
-    <MapContainer
-      center={center as [number, number]}
-      zoom={7}
-      style={{ height: "400px", width: "100%" }}
-    >
+    <MapContainer center={center} zoom={7} style={{ height: "400px", width: "100%" }}>
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-      <MarkerClusterGroup>
-        {regions.map(({ coords, count }, idx) => (
-          <Marker key={idx} position={[coords.lat, coords.lng]}>
-            <Popup>{count} beneficiaries</Popup>
-          </Marker>
-        ))}
-      </MarkerClusterGroup>
+      {regions.map(({ coords, count }) => (
+        <Marker key={`${coords.lat}-${coords.lng}`} position={[coords.lat, coords.lng]}>
+          <Popup>{count} beneficiaries</Popup>
+        </Marker>
+      ))}
     </MapContainer>
   );
 }
