@@ -52,8 +52,7 @@ export default function ContractDetail() {
         `latitude=${coords.lat}&longitude=${coords.lon}` +
         `&start_date=${start}&end_date=${end}` +
         `&daily=precipitation_sum` +
-        `&timezone=Africa/Nairobi` +
-        `&precipitation_unit=mm`
+        `&timezone=Africa/Nairobi` 
     )
       .then((res) => {
         if (!res.ok) throw new Error(`Weather API status ${res.status}`);
