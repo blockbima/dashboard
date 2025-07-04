@@ -14,6 +14,16 @@ export default function ContractDetail() {
   const pageSize = 5;
   const [beneficiaryPage, setBeneficiaryPage] = useState(1);
 
+  // 🔍 Coordinates by Region Name
+  const regionCoordinates: Record<string, { lat: number; lon: number }> = {
+    Nyeri: { lat: -0.4371, lon: 36.9580 },
+    Kitengela: { lat: -1.4787, lon: 36.9577 },
+    Marikiti: { lat: -1.2752, lon: 36.8878 },
+  };
+
+  const [weatherData, setWeatherData] = useState<Record<string, number>>({});
+
+  // 🔄 Fetch contract
   useEffect(() => {
     fetch(`/api/contracts/${id}`)
       .then((res) => {
@@ -23,6 +33,33 @@ export default function ContractDetail() {
       .then((data) => setContract(data))
       .catch((e) => setError(e.message));
   }, [id]);
+
+  // 🌧 Fetch weather data
+  useEffect(() => {
+    if (!contract?.region?.name || !Array.isArray(contract?.report_info?.daily_data)) return;
+
+    const region = contract.region.name;
+    const coords = regionCoordinates[region];
+    if (!coords) return;
+
+    const dates = contract.report_info.daily_data.map((d: any) => d.date);
+    const start = dates[0];
+    const end = dates[dates.length - 1];
+
+    fetch(
+      `https://api.open-meteo.com/v1/archive?latitude=${coords.lat}&longitude=${coords.lon}&start_date=${start}&end_date=${end}&daily=precipitation_sum&timezone=Africa/Nairobi&precipitation_unit=mm`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        const result: Record<string, number> = {};
+        if (data.daily && Array.isArray(data.daily.time)) {
+          data.daily.time.forEach((d: string, i: number) => {
+            result[d] = data.daily.precipitation_sum[i];
+          });
+        }
+        setWeatherData(result);
+      });
+  }, [contract]);
 
   if (error) return <div className="p-6 text-red-400">Error: {error}</div>;
   if (!contract) return <div className="p-6 text-gray-100">Loading...</div>;
@@ -46,39 +83,28 @@ export default function ContractDetail() {
         ← Back to Dashboard
       </button>
 
-      {/* Top Layout: Metadata + Infographics */}
+      {/* Top Layout */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        {/* Left Column */}
         <div>
           <h2 className="text-2xl font-bold mb-2">Contract {contract.id}</h2>
           <p><strong>Region:</strong> {contract.region.name}</p>
           <p><strong>Total Premium:</strong> {contract.total_premium}</p>
           <p><strong>Status:</strong> {contract.is_fulfilled ? "Settled" : "Active"}</p>
           <p><strong>Settlement Tx:</strong> {contract.settlement_transaction_id ? (
-            <a
-              href={`https://explorer.testnet.xrplevm.org/tx/${contract.settlement_transaction_id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-indigo-400 underline"
-            >
+            <a href={`https://explorer.testnet.xrplevm.org/tx/${contract.settlement_transaction_id}`}
+               target="_blank" rel="noopener noreferrer" className="text-indigo-400 underline">
               {contract.settlement_transaction_id}
-            </a>
-          ) : "N/A"}</p>
+            </a>) : "N/A"}</p>
           <p><strong>Maturity Date:</strong> {new Date(contract.maturity_date).toLocaleDateString()}</p>
           <p><strong>Smart Contract:</strong> {contract.smart_contract_address ? (
-            <a
-              href={`https://explorer.testnet.xrplevm.org/address/${contract.smart_contract_address}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-indigo-400 underline"
-            >
+            <a href={`https://explorer.testnet.xrplevm.org/address/${contract.smart_contract_address}`}
+               target="_blank" rel="noopener noreferrer" className="text-indigo-400 underline">
               {contract.smart_contract_address}
-            </a>
-          ) : "N/A"}</p>
+            </a>) : "N/A"}</p>
           <p><strong>Created At:</strong> {new Date(contract.created_at).toLocaleDateString()}</p>
         </div>
 
-        {/* Right Column - Infographics */}
+        {/* Infographics */}
         <div className="space-y-4">
           <div className="bg-gray-800 rounded p-4">
             <div className="text-3xl font-bold">{contract.beneficiaries.length}</div>
@@ -147,29 +173,30 @@ export default function ContractDetail() {
       </div>
 
       {/* Report Info */}
-      {Array.isArray(contract.report_info?.daily_data) &&
-        contract.report_info.daily_data.length > 0 && (
-          <>
-            <h3 className="mt-6 text-xl font-semibold">Report Info</h3>
-            <table className="min-w-full border mt-2">
-              <thead>
-                <tr className="bg-gray-800">
-                  <th className="p-2 text-left">Date</th>
-                  <th className="p-2 text-left">Reported Value</th>
-                  <th className="p-2 text-left">Calculated Payout</th>
+      {Array.isArray(contract.report_info?.daily_data) && contract.report_info.daily_data.length > 0 && (
+        <>
+          <h3 className="mt-6 text-xl font-semibold">Report Info</h3>
+          <table className="min-w-full border mt-2">
+            <thead>
+              <tr className="bg-gray-800">
+                <th className="p-2 text-left">Date</th>
+                <th className="p-2 text-left">Reported Value</th>
+                <th className="p-2 text-left">Calculated Payout</th>
+                <th className="p-2 text-left">Rain (mm)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {contract.report_info.daily_data.map((d: any) => (
+                <tr key={d.date} className="border-t border-gray-700">
+                  <td className="p-2">{d.date}</td>
+                  <td className="p-2">{d.reported_value}</td>
+                  <td className="p-2">{d.calculated_payout}</td>
+                  <td className="p-2">{weatherData[d.date] ?? "..."}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {contract.report_info.daily_data.map((d: any) => (
-                  <tr key={d.date} className="border-t border-gray-700">
-                    <td className="p-2">{d.date}</td>
-                    <td className="p-2">{d.reported_value}</td>
-                    <td className="p-2">{d.calculated_payout}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </>
+              ))}
+            </tbody>
+          </table>
+        </>
       )}
 
       {/* Raw Data Viewer */}
@@ -196,12 +223,7 @@ export default function ContractDetail() {
                   <td className="p-2 font-mono">{keyName}</td>
                   <td className="p-2 font-mono">
                     {keyName === "settlement_transaction_id" && keyValue ? (
-                      <a
-                        href={`https://explorer.testnet.xrplevm.org/tx/${String(keyValue)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-indigo-400 underline"
-                      >
+                      <a href={`https://explorer.testnet.xrplevm.org/tx/${String(keyValue)}`} target="_blank" rel="noopener noreferrer" className="text-indigo-400 underline">
                         {String(keyValue)}
                       </a>
                     ) : (
