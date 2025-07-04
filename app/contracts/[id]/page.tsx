@@ -41,9 +41,10 @@ export default function ContractDetail() {
     const coords = regionCoordinates[region];
     if (!coords) return;
 
-    const dates = contract.report_info.daily_data.map((d: any) =>
-      d.date.split("T")[0] // normalize
-    );
+    const dates = contract.report_info.daily_data
+      .map((d: any) => d.date.split("T")[0])
+      .sort(); // 🔧 ensure correct order
+
     const start = dates[0];
     const end = dates[dates.length - 1];
 
@@ -52,7 +53,7 @@ export default function ContractDetail() {
         `latitude=${coords.lat}&longitude=${coords.lon}` +
         `&start_date=${start}&end_date=${end}` +
         `&daily=precipitation_sum` +
-        `&timezone=Africa/Nairobi` 
+        `&timezone=Africa/Nairobi`
     )
       .then((res) => {
         if (!res.ok) throw new Error(`Weather API status ${res.status}`);
@@ -66,6 +67,7 @@ export default function ContractDetail() {
           });
         }
         setWeatherData(result);
+        console.log("Weather API response:", result);
       })
       .catch((e) => {
         console.error("Weather fetch error:", e);
@@ -194,7 +196,7 @@ export default function ContractDetail() {
             </thead>
             <tbody>
               {contract.report_info.daily_data.map((d: any) => {
-                const dateKey = d.date.split("T")[0]; // normalize
+                const dateKey = d.date.split("T")[0];
                 return (
                   <tr key={d.date} className="border-t border-gray-700">
                     <td className="p-2">{dateKey}</td>
@@ -208,53 +210,6 @@ export default function ContractDetail() {
           </table>
         </>
       )}
-
-      <div className="mt-8">
-        <h3 className="text-xl font-semibold mb-2">All Contract Fields</h3>
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => setFieldIdx((i) => Math.max(0, i - 1))}
-            disabled={fieldIdx === 0}
-            className="px-3 py-1 bg-gray-700 text-gray-100 rounded disabled:opacity-50"
-          >
-            Prev
-          </button>
-          <div className="flex-1 overflow-x-auto">
-            <table className="min-w-full border">
-              <thead>
-                <tr className="bg-gray-800">
-                  <th className="p-2 text-left">Key</th>
-                  <th className="p-2 text-left">Value</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-t border-gray-700">
-                  <td className="p-2 font-mono">{keyName}</td>
-                  <td className="p-2 font-mono">
-                    {keyName === "settlement_transaction_id" && keyValue ? (
-                      <a href={`https://explorer.testnet.xrplevm.org/tx/${String(keyValue)}`} target="_blank" rel="noopener noreferrer" className="text-indigo-400 underline">
-                        {String(keyValue)}
-                      </a>
-                    ) : (
-                      JSON.stringify(keyValue)
-                    )}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <button
-            onClick={() => setFieldIdx((i) => Math.min(totalFields - 1, i + 1))}
-            disabled={fieldIdx === totalFields - 1}
-            className="px-3 py-1 bg-gray-700 text-gray-100 rounded disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
-        <div className="mt-1 text-sm text-gray-400">
-          Showing {fieldIdx + 1} of {totalFields}
-        </div>
-      </div>
     </div>
   );
 }
