@@ -28,7 +28,6 @@ export default function ContractDetail() {
     return <div className="p-6 text-gray-100">Loading contract details...</div>;
   }
 
-  // Prepare raw fields for slider
   const rawEntries = Object.entries(contract);
   const totalFields = rawEntries.length;
   const [keyName, keyValue] = rawEntries[fieldIdx] || ["", ""];
@@ -46,8 +45,27 @@ export default function ContractDetail() {
       <p><strong>Region:</strong> {contract.region.name}</p>
       <p><strong>Total Premium:</strong> {contract.total_premium}</p>
       <p><strong>Status:</strong> {contract.is_fulfilled ? "Settled" : "Active"}</p>
+      <p><strong>Settlement Tx:</strong> {contract.settlement_transaction_id ? (
+        <a
+          href={`https://explorer.testnet.xrplevm.org/tx/${contract.settlement_transaction_id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-indigo-400 underline"
+        >
+          {contract.settlement_transaction_id}
+        </a>
+      ) : "N/A"}</p>
       <p><strong>Maturity Date:</strong> {new Date(contract.maturity_date).toLocaleDateString()}</p>
-      <p><strong>Smart Contract:</strong> {contract.smart_contract_address || "N/A"}</p>
+      <p><strong>Smart Contract:</strong> {contract.smart_contract_address ? (
+        <a
+          href={`https://explorer.testnet.xrplevm.org/address/${contract.smart_contract_address}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-indigo-400 underline"
+        >
+          {contract.smart_contract_address}
+        </a>
+      ) : "N/A"}</p>
 
       <h3 className="mt-6 text-xl font-semibold">Beneficiaries</h3>
       <ul className="list-disc list-inside space-y-1">
