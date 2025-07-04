@@ -105,12 +105,12 @@ export default function ContractDetail() {
                   <td className="p-2 font-mono">
                     {keyName === "settlement_transaction_id" && keyValue ? (
                       <a
-                        href={`https://explorer.testnet.xrplevm.org/tx/${keyValue}`}
+                        href={`https://explorer.testnet.xrplevm.org/tx/${String(keyValue)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-indigo-400 underline"
                       >
-                        {keyValue}
+                        {String(keyValue)}
                       </a>
                     ) : (
                       JSON.stringify(keyValue)
