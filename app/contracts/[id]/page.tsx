@@ -41,32 +41,59 @@ export default function ContractDetail() {
         ← Back to Dashboard
       </button>
 
-      <h2 className="text-2xl font-bold mb-2">Contract {contract.id}</h2>
-      <p><strong>Region:</strong> {contract.region.name}</p>
-      <p><strong>Total Premium:</strong> {contract.total_premium}</p>
-      <p><strong>Status:</strong> {contract.is_fulfilled ? "Settled" : "Active"}</p>
-      <p><strong>Settlement Tx:</strong> {contract.settlement_transaction_id ? (
-        <a
-          href={`https://explorer.testnet.xrplevm.org/tx/${contract.settlement_transaction_id}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-indigo-400 underline"
-        >
-          {contract.settlement_transaction_id}
-        </a>
-      ) : "N/A"}</p>
-      <p><strong>Maturity Date:</strong> {new Date(contract.maturity_date).toLocaleDateString()}</p>
-      <p><strong>Smart Contract:</strong> {contract.smart_contract_address ? (
-        <a
-          href={`https://explorer.testnet.xrplevm.org/address/${contract.smart_contract_address}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-indigo-400 underline"
-        >
-          {contract.smart_contract_address}
-        </a>
-      ) : "N/A"}</p>
+      {/* Two-Column Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        {/* Left Column */}
+        <div>
+          <h2 className="text-2xl font-bold mb-2">Contract {contract.id}</h2>
+          <p><strong>Region:</strong> {contract.region.name}</p>
+          <p><strong>Total Premium:</strong> {contract.total_premium}</p>
+          <p><strong>Status:</strong> {contract.is_fulfilled ? "Settled" : "Active"}</p>
+          <p><strong>Settlement Tx:</strong> {contract.settlement_transaction_id ? (
+            <a
+              href={`https://explorer.testnet.xrplevm.org/tx/${contract.settlement_transaction_id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-indigo-400 underline"
+            >
+              {contract.settlement_transaction_id}
+            </a>
+          ) : "N/A"}</p>
+          <p><strong>Maturity Date:</strong> {new Date(contract.maturity_date).toLocaleDateString()}</p>
+          <p><strong>Smart Contract:</strong> {contract.smart_contract_address ? (
+            <a
+              href={`https://explorer.testnet.xrplevm.org/address/${contract.smart_contract_address}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-indigo-400 underline"
+            >
+              {contract.smart_contract_address}
+            </a>
+          ) : "N/A"}</p>
+        </div>
 
+        {/* Right Column - Infographic Boxes */}
+        <div className="space-y-4">
+          <div className="bg-gray-800 rounded p-4">
+            <div className="text-3xl font-bold">{contract.beneficiaries.length}</div>
+            <div className="text-gray-400">Number of Beneficiaries</div>
+          </div>
+          <div className="bg-gray-800 rounded p-4">
+            <div className="text-3xl font-bold">{contract.total_claim_amount}</div>
+            <div className="text-gray-400">Total Payout</div>
+          </div>
+          <div className="bg-gray-800 rounded p-4">
+            <div className="text-3xl font-bold">
+              {contract.beneficiaries.length > 0
+                ? (contract.total_claim_amount / contract.beneficiaries.length).toFixed(2)
+                : "N/A"}
+            </div>
+            <div className="text-gray-400">Individual Claim Amount</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Beneficiaries List */}
       <h3 className="mt-6 text-xl font-semibold">Beneficiaries</h3>
       <ul className="list-disc list-inside space-y-1">
         {contract.beneficiaries.map((b: string, i: number) => (
@@ -74,31 +101,33 @@ export default function ContractDetail() {
         ))}
       </ul>
 
-      {Array.isArray(contract.report_info?.daily_data) && contract.report_info.daily_data.length > 0 && (
-        <>
-          <h3 className="mt-6 text-xl font-semibold">Report Info</h3>
-          <table className="min-w-full border mt-2">
-            <thead>
-              <tr className="bg-gray-800">
-                <th className="p-2 text-left">Date</th>
-                <th className="p-2 text-left">Reported Value</th>
-                <th className="p-2 text-left">Calculated Payout</th>
-              </tr>
-            </thead>
-            <tbody>
-              {contract.report_info.daily_data.map((d: any) => (
-                <tr key={d.date} className="border-t border-gray-700">
-                  <td className="p-2">{d.date}</td>
-                  <td className="p-2">{d.reported_value}</td>
-                  <td className="p-2">{d.calculated_payout}</td>
+      {/* Report Info Table */}
+      {Array.isArray(contract.report_info?.daily_data) &&
+        contract.report_info.daily_data.length > 0 && (
+          <>
+            <h3 className="mt-6 text-xl font-semibold">Report Info</h3>
+            <table className="min-w-full border mt-2">
+              <thead>
+                <tr className="bg-gray-800">
+                  <th className="p-2 text-left">Date</th>
+                  <th className="p-2 text-left">Reported Value</th>
+                  <th className="p-2 text-left">Calculated Payout</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </>
-      )}
+              </thead>
+              <tbody>
+                {contract.report_info.daily_data.map((d: any) => (
+                  <tr key={d.date} className="border-t border-gray-700">
+                    <td className="p-2">{d.date}</td>
+                    <td className="p-2">{d.reported_value}</td>
+                    <td className="p-2">{d.calculated_payout}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
 
-      {/* Raw Data Slider */}
+      {/* Raw Data Viewer */}
       <div className="mt-8">
         <h3 className="text-xl font-semibold mb-2">All Contract Fields</h3>
         <div className="flex items-center gap-4">
