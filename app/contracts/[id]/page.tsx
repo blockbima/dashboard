@@ -22,6 +22,7 @@ export default function ContractDetail() {
 
   const [weatherData, setWeatherData] = useState<Record<string, number>>({});
 
+  // 🔄 Fetch contract
   useEffect(() => {
     fetch(`/api/contracts/${id}`)
       .then((res) => {
@@ -32,6 +33,7 @@ export default function ContractDetail() {
       .catch((e) => setError(e.message));
   }, [id]);
 
+  // 🌧 Fetch historical weather data
   useEffect(() => {
     if (!contract?.region?.name || !Array.isArray(contract?.report_info?.daily_data)) return;
 
@@ -39,7 +41,9 @@ export default function ContractDetail() {
     const coords = regionCoordinates[region];
     if (!coords) return;
 
-    const dates = contract.report_info.daily_data.map((d: any) => d.date);
+    const dates = contract.report_info.daily_data.map((d: any) =>
+      d.date.split("T")[0] // normalize
+    );
     const start = dates[0];
     const end = dates[dates.length - 1];
 
@@ -190,14 +194,17 @@ export default function ContractDetail() {
               </tr>
             </thead>
             <tbody>
-              {contract.report_info.daily_data.map((d: any) => (
-                <tr key={d.date} className="border-t border-gray-700">
-                  <td className="p-2">{d.date}</td>
-                  <td className="p-2">{d.reported_value}</td>
-                  <td className="p-2">{d.calculated_payout}</td>
-                  <td className="p-2">{weatherData[d.date] ?? "..."}</td>
-                </tr>
-              ))}
+              {contract.report_info.daily_data.map((d: any) => {
+                const dateKey = d.date.split("T")[0]; // normalize
+                return (
+                  <tr key={d.date} className="border-t border-gray-700">
+                    <td className="p-2">{dateKey}</td>
+                    <td className="p-2">{d.reported_value}</td>
+                    <td className="p-2">{d.calculated_payout}</td>
+                    <td className="p-2">{weatherData[dateKey] ?? "..."}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </>
