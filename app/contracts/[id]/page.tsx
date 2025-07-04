@@ -75,6 +75,7 @@ export default function ContractDetail() {
               {contract.smart_contract_address}
             </a>
           ) : "N/A"}</p>
+          <p><strong>Created At:</strong> {new Date(contract.created_at).toLocaleDateString()}</p>
         </div>
 
         {/* Right Column - Infographics */}
@@ -98,7 +99,7 @@ export default function ContractDetail() {
         </div>
       </div>
 
-      {/* Beneficiaries Table with Pagination */}
+      {/* Beneficiaries Table */}
       <h3 className="mt-6 text-xl font-semibold">Beneficiaries</h3>
       <table className="min-w-full border mt-2">
         <thead>
@@ -171,7 +172,7 @@ export default function ContractDetail() {
           </>
       )}
 
-      {/* Raw Contract Field Viewer */}
+      {/* Raw Data Viewer */}
       <div className="mt-8">
         <h3 className="text-xl font-semibold mb-2">All Contract Fields</h3>
         <div className="flex items-center gap-4">
