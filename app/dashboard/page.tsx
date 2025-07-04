@@ -6,10 +6,10 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { CSVLink } from "react-csv";
 import clsx from "clsx";
-import Infographics from "@/components/Infographics";
+import Infographics from "../../components/Infographics";
 
-// Dynamically load MapPreview (no SSR)
-const MapPreview = dynamic(() => import("@/components/MapPreview"), { ssr: false });
+// Dynamically load the map (no SSR)
+const MapPreview = dynamic(() => import("../../components/MapPreview"), { ssr: false });
 
 export default function Dashboard() {
   const [allContracts, setAllContracts] = useState<any[]>([]);
@@ -28,10 +28,7 @@ export default function Dashboard() {
       .catch(() => setAllContracts([]));
   }, []);
 
-  // Cutoff filter
   const cutoffDate = new Date("2025-06-20");
-
-  // 1) Filter
   const filtered = allContracts.filter((c) => {
     const created = new Date(c.created_at);
     const afterCutoff = created >= cutoffDate;
@@ -43,7 +40,6 @@ export default function Dashboard() {
     return afterCutoff && byRegion && bySearch;
   });
 
-  // 2) Sort
   const sorted = [...filtered].sort((a, b) => {
     const aVal = a[sortKey], bVal = b[sortKey];
     if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
@@ -51,11 +47,9 @@ export default function Dashboard() {
     return 0;
   });
 
-  // 3) Paginate
   const totalPages = Math.ceil(sorted.length / pageSize);
   const paginated = sorted.slice((pageNum - 1) * pageSize, pageNum * pageSize);
 
-  // Sort handler
   const handleSort = (key: string) => {
     if (sortKey === key) setSortOrder((o) => (o === "asc" ? "desc" : "asc"));
     else {
@@ -73,17 +67,25 @@ export default function Dashboard() {
         <input
           placeholder="Search by ID or beneficiary"
           value={searchTerm}
-          onChange={(e) => { setSearchTerm(e.target.value); setPageNum(1); }}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setPageNum(1);
+          }}
           className="bg-gray-800 text-gray-100 border border-gray-700 placeholder-gray-500 px-2 py-1 rounded"
         />
         <select
           value={regionFilter}
-          onChange={(e) => { setRegionFilter(e.target.value); setPageNum(1); }}
+          onChange={(e) => {
+            setRegionFilter(e.target.value);
+            setPageNum(1);
+          }}
           className="bg-gray-800 text-gray-100 border border-gray-700 px-2 py-1 rounded"
         >
           <option value="">All Regions</option>
           {regions.map((r) => (
-            <option key={r} value={r}>{r}</option>
+            <option key={r} value={r}>
+              {r}
+            </option>
           ))}
         </select>
         <CSVLink
@@ -113,7 +115,8 @@ export default function Dashboard() {
                   className="p-2 text-left text-gray-100 cursor-pointer"
                   onClick={() => handleSort(key)}
                 >
-                  {label}{sortKey === key ? (sortOrder === "asc" ? " ▲" : " ▼") : ""}
+                  {label}
+                  {sortKey === key ? (sortOrder === "asc" ? " ▲" : " ▼") : ""}
                 </th>
               ))}
             </tr>
@@ -149,7 +152,9 @@ export default function Dashboard() {
         >
           Prev
         </button>
-        <span>Page {pageNum} of {totalPages}</span>
+        <span>
+          Page {pageNum} of {totalPages}
+        </span>
         <button
           disabled={pageNum === totalPages}
           onClick={() => setPageNum((p) => p + 1)}
