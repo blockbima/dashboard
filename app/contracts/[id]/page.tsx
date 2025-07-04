@@ -14,7 +14,6 @@ export default function ContractDetail() {
   const pageSize = 5;
   const [beneficiaryPage, setBeneficiaryPage] = useState(1);
 
-  // 🔍 Coordinates by Region Name
   const regionCoordinates: Record<string, { lat: number; lon: number }> = {
     Nyeri: { lat: -0.4371, lon: 36.9580 },
     Kitengela: { lat: -1.4787, lon: 36.9577 },
@@ -23,7 +22,6 @@ export default function ContractDetail() {
 
   const [weatherData, setWeatherData] = useState<Record<string, number>>({});
 
-  // 🔄 Fetch contract
   useEffect(() => {
     fetch(`/api/contracts/${id}`)
       .then((res) => {
@@ -34,7 +32,6 @@ export default function ContractDetail() {
       .catch((e) => setError(e.message));
   }, [id]);
 
-  // 🌧 Fetch weather data
   useEffect(() => {
     if (!contract?.region?.name || !Array.isArray(contract?.report_info?.daily_data)) return;
 
@@ -47,17 +44,28 @@ export default function ContractDetail() {
     const end = dates[dates.length - 1];
 
     fetch(
-      `https://api.open-meteo.com/v1/archive?latitude=${coords.lat}&longitude=${coords.lon}&start_date=${start}&end_date=${end}&daily=precipitation_sum&timezone=Africa/Nairobi&precipitation_unit=mm`
+      `https://archive-api.open-meteo.com/v1/archive?` +
+        `latitude=${coords.lat}&longitude=${coords.lon}` +
+        `&start_date=${start}&end_date=${end}` +
+        `&daily=precipitation_sum` +
+        `&timezone=Africa/Nairobi` +
+        `&precipitation_unit=mm`
     )
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error(`Weather API status ${res.status}`);
+        return res.json();
+      })
       .then((data) => {
         const result: Record<string, number> = {};
-        if (data.daily && Array.isArray(data.daily.time)) {
+        if (data.daily?.time && Array.isArray(data.daily.time)) {
           data.daily.time.forEach((d: string, i: number) => {
             result[d] = data.daily.precipitation_sum[i];
           });
         }
         setWeatherData(result);
+      })
+      .catch((e) => {
+        console.error("Weather fetch error:", e);
       });
   }, [contract]);
 
@@ -83,7 +91,6 @@ export default function ContractDetail() {
         ← Back to Dashboard
       </button>
 
-      {/* Top Layout */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div>
           <h2 className="text-2xl font-bold mb-2">Contract {contract.id}</h2>
@@ -104,7 +111,6 @@ export default function ContractDetail() {
           <p><strong>Created At:</strong> {new Date(contract.created_at).toLocaleDateString()}</p>
         </div>
 
-        {/* Infographics */}
         <div className="space-y-4">
           <div className="bg-gray-800 rounded p-4">
             <div className="text-3xl font-bold">{contract.beneficiaries.length}</div>
@@ -125,7 +131,6 @@ export default function ContractDetail() {
         </div>
       </div>
 
-      {/* Beneficiaries Table */}
       <h3 className="mt-6 text-xl font-semibold">Beneficiaries</h3>
       <table className="min-w-full border mt-2">
         <thead>
@@ -172,7 +177,6 @@ export default function ContractDetail() {
         </button>
       </div>
 
-      {/* Report Info */}
       {Array.isArray(contract.report_info?.daily_data) && contract.report_info.daily_data.length > 0 && (
         <>
           <h3 className="mt-6 text-xl font-semibold">Report Info</h3>
@@ -199,7 +203,6 @@ export default function ContractDetail() {
         </>
       )}
 
-      {/* Raw Data Viewer */}
       <div className="mt-8">
         <h3 className="text-xl font-semibold mb-2">All Contract Fields</h3>
         <div className="flex items-center gap-4">
