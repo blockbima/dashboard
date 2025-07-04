@@ -11,6 +11,9 @@ export default function ContractDetail() {
   const [error, setError] = useState<string | null>(null);
   const [fieldIdx, setFieldIdx] = useState(0);
 
+  const pageSize = 5;
+  const [beneficiaryPage, setBeneficiaryPage] = useState(1);
+
   useEffect(() => {
     fetch(`/api/contracts/${id}`)
       .then((res) => {
@@ -21,16 +24,18 @@ export default function ContractDetail() {
       .catch((e) => setError(e.message));
   }, [id]);
 
-  if (error) {
-    return <div className="p-6 text-red-400">Error fetching contract: {error}</div>;
-  }
-  if (!contract) {
-    return <div className="p-6 text-gray-100">Loading contract details...</div>;
-  }
+  if (error) return <div className="p-6 text-red-400">Error: {error}</div>;
+  if (!contract) return <div className="p-6 text-gray-100">Loading...</div>;
 
   const rawEntries = Object.entries(contract);
   const totalFields = rawEntries.length;
   const [keyName, keyValue] = rawEntries[fieldIdx] || ["", ""];
+
+  const totalBeneficiaryPages = Math.ceil(contract.beneficiaries.length / pageSize);
+  const paginatedBeneficiaries = contract.beneficiaries.slice(
+    (beneficiaryPage - 1) * pageSize,
+    beneficiaryPage * pageSize
+  );
 
   return (
     <div className="bg-gray-900 text-gray-100 min-h-screen p-6">
@@ -41,7 +46,7 @@ export default function ContractDetail() {
         ← Back to Dashboard
       </button>
 
-      {/* Two-Column Layout */}
+      {/* Top Layout: Metadata + Infographics */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         {/* Left Column */}
         <div>
@@ -72,7 +77,7 @@ export default function ContractDetail() {
           ) : "N/A"}</p>
         </div>
 
-        {/* Right Column - Infographic Boxes */}
+        {/* Right Column - Infographics */}
         <div className="space-y-4">
           <div className="bg-gray-800 rounded p-4">
             <div className="text-3xl font-bold">{contract.beneficiaries.length}</div>
@@ -93,15 +98,54 @@ export default function ContractDetail() {
         </div>
       </div>
 
-      {/* Beneficiaries List */}
+      {/* Beneficiaries Table with Pagination */}
       <h3 className="mt-6 text-xl font-semibold">Beneficiaries</h3>
-      <ul className="list-disc list-inside space-y-1">
-        {contract.beneficiaries.map((b: string, i: number) => (
-          <li key={i}>{b}</li>
-        ))}
-      </ul>
+      <table className="min-w-full border mt-2">
+        <thead>
+          <tr className="bg-gray-800">
+            <th className="p-2 text-left">#</th>
+            <th className="p-2 text-left">Address</th>
+            <th className="p-2 text-left">Copy</th>
+          </tr>
+        </thead>
+        <tbody>
+          {paginatedBeneficiaries.map((b: string, i: number) => (
+            <tr key={i} className="border-t border-gray-700">
+              <td className="p-2">{(beneficiaryPage - 1) * pageSize + i + 1}</td>
+              <td className="p-2 truncate max-w-xs" title={b}>{b}</td>
+              <td className="p-2">
+                <button
+                  onClick={() => navigator.clipboard.writeText(b)}
+                  className="text-indigo-400 underline"
+                >
+                  Copy
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="flex justify-between items-center mt-2 text-sm text-gray-400">
+        <button
+          onClick={() => setBeneficiaryPage((p) => Math.max(1, p - 1))}
+          disabled={beneficiaryPage === 1}
+          className="px-2 py-1 bg-gray-700 text-gray-100 rounded disabled:opacity-50"
+        >
+          Prev
+        </button>
+        <span>
+          Page {beneficiaryPage} of {totalBeneficiaryPages}
+        </span>
+        <button
+          onClick={() => setBeneficiaryPage((p) => Math.min(totalBeneficiaryPages, p + 1))}
+          disabled={beneficiaryPage === totalBeneficiaryPages}
+          className="px-2 py-1 bg-gray-700 text-gray-100 rounded disabled:opacity-50"
+        >
+          Next
+        </button>
+      </div>
 
-      {/* Report Info Table */}
+      {/* Report Info */}
       {Array.isArray(contract.report_info?.daily_data) &&
         contract.report_info.daily_data.length > 0 && (
           <>
@@ -125,9 +169,9 @@ export default function ContractDetail() {
               </tbody>
             </table>
           </>
-        )}
+      )}
 
-      {/* Raw Data Viewer */}
+      {/* Raw Contract Field Viewer */}
       <div className="mt-8">
         <h3 className="text-xl font-semibold mb-2">All Contract Fields</h3>
         <div className="flex items-center gap-4">
