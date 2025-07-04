@@ -33,6 +33,13 @@ export default function ContractDetail() {
   const totalFields = rawEntries.length;
   const [keyName, keyValue] = rawEntries[fieldIdx] || ["", ""];
 
+  // Explorer URL builder
+  const explorerBase = "https://explorer.testnet.xrplevm.org/address";
+  const addr = contract.smart_contract_address;
+  const explorerUrl = addr
+    ? `${explorerBase}/${addr}?tab=index`
+    : null;
+
   return (
     <div className="bg-gray-900 text-gray-100 min-h-screen p-6">
       <button
@@ -46,8 +53,25 @@ export default function ContractDetail() {
       <p><strong>Region:</strong> {contract.region.name}</p>
       <p><strong>Total Premium:</strong> {contract.total_premium}</p>
       <p><strong>Status:</strong> {contract.is_fulfilled ? "Settled" : "Active"}</p>
-      <p><strong>Maturity Date:</strong> {new Date(contract.maturity_date).toLocaleDateString()}</p>
-      <p><strong>Smart Contract:</strong> {contract.smart_contract_address || "N/A"}</p>
+      <p>
+        <strong>Maturity Date:</strong>{" "}
+        {new Date(contract.maturity_date).toLocaleDateString()}
+      </p>
+      <p>
+        <strong>Smart Contract:</strong>{" "}
+        {addr ? (
+          <a
+            href={explorerUrl!}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-indigo-400 underline"
+          >
+            {addr}
+          </a>
+        ) : (
+          "N/A"
+        )}
+      </p>
 
       <h3 className="mt-6 text-xl font-semibold">Beneficiaries</h3>
       <ul className="list-disc list-inside space-y-1">
