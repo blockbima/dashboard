@@ -14,15 +14,6 @@ export default function ContractDetail() {
   const pageSize = 5;
   const [beneficiaryPage, setBeneficiaryPage] = useState(1);
 
-  const regionCoordinates: Record<string, { lat: number; lon: number }> = {
-    Nyeri: { lat: -0.4371, lon: 36.9580 },
-    Kitengela: { lat: -1.4787, lon: 36.9577 },
-    Marikiti: { lat: -1.2752, lon: 36.8878 },
-  };
-
-  const [weatherData, setWeatherData] = useState<Record<string, number>>({});
-
-  // 🔄 Fetch contract
   useEffect(() => {
     fetch(`/api/contracts/${id}`)
       .then((res) => {
@@ -33,135 +24,79 @@ export default function ContractDetail() {
       .catch((e) => setError(e.message));
   }, [id]);
 
-  // 🌧 Fetch historical weather data
-  useEffect(() => {
-    if (!contract?.region?.name || !Array.isArray(contract?.report_info?.daily_data)) return;
+  if (error) {
+    return (
+      <div className="text-red-500 p-4">
+        <p>Error loading contract: {error}</p>
+        <button onClick={() => router.refresh()}>Retry</button>
+      </div>
+    );
+  }
 
-    const region = contract.region.name;
-    const coords = regionCoordinates[region];
-    if (!coords) return;
+  if (!contract) {
+    return <div className="p-4 text-gray-400">Loading...</div>;
+  }
 
-    const dates = contract.report_info.daily_data
-      .map((d: any) => d.date.split("T")[0])
-      .sort(); // 🔧 ensure correct order
+  const totalBeneficiaryPages = Math.ceil(
+    (contract.beneficiaries?.length || 0) / pageSize
+  );
 
-    const start = dates[0];
-    const end = dates[dates.length - 1];
-
-    fetch(
-      `https://archive-api.open-meteo.com/v1/archive?` +
-        `latitude=${coords.lat}&longitude=${coords.lon}` +
-        `&start_date=${start}&end_date=${end}` +
-        `&daily=precipitation_sum` +
-        `&timezone=Africa/Nairobi`
-    )
-      .then((res) => {
-        if (!res.ok) throw new Error(`Weather API status ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
-        const result: Record<string, number> = {};
-        if (data.daily?.time && Array.isArray(data.daily.time)) {
-          data.daily.time.forEach((d: string, i: number) => {
-            result[d] = data.daily.precipitation_sum[i];
-          });
-        }
-        setWeatherData(result);
-        console.log("Weather API response:", result);
-      })
-      .catch((e) => {
-        console.error("Weather fetch error:", e);
-      });
-  }, [contract]);
-
-  if (error) return <div className="p-6 text-red-400">Error: {error}</div>;
-  if (!contract) return <div className="p-6 text-gray-100">Loading...</div>;
-
-  const rawEntries = Object.entries(contract);
-  const totalFields = rawEntries.length;
-  const [keyName, keyValue] = rawEntries[fieldIdx] || ["", ""];
-
-  const totalBeneficiaryPages = Math.ceil(contract.beneficiaries.length / pageSize);
-  const paginatedBeneficiaries = contract.beneficiaries.slice(
+  const displayedBeneficiaries = (contract.beneficiaries || []).slice(
     (beneficiaryPage - 1) * pageSize,
     beneficiaryPage * pageSize
   );
 
   return (
-    <div className="bg-gray-900 text-gray-100 min-h-screen p-6">
-      <button
-        onClick={() => router.push("/dashboard")}
-        className="mb-4 text-indigo-400 hover:underline"
-      >
-        ← Back to Dashboard
-      </button>
+    <div className="p-4 max-w-5xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4">{contract.name}</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div>
-          <h2 className="text-2xl font-bold mb-2">Contract {contract.id}</h2>
-          <p><strong>Region:</strong> {contract.region.name}</p>
-          <p><strong>Total Premium:</strong> {contract.total_premium}</p>
-          <p><strong>Status:</strong> {contract.is_fulfilled ? "Settled" : "Active"}</p>
-          <p><strong>Settlement Tx:</strong> {contract.settlement_transaction_id ? (
-            <a href={`https://explorer.testnet.xrplevm.org/tx/${contract.settlement_transaction_id}`}
-               target="_blank" rel="noopener noreferrer" className="text-indigo-400 underline">
-              {contract.settlement_transaction_id}
-            </a>) : "N/A"}</p>
-          <p><strong>Maturity Date:</strong> {new Date(contract.maturity_date).toLocaleDateString()}</p>
-          <p><strong>Smart Contract:</strong> {contract.smart_contract_address ? (
-            <a href={`https://explorer.testnet.xrplevm.org/address/${contract.smart_contract_address}`}
-               target="_blank" rel="noopener noreferrer" className="text-indigo-400 underline">
-              {contract.smart_contract_address}
-            </a>) : "N/A"}</p>
-          <p><strong>Created At:</strong> {new Date(contract.created_at).toLocaleDateString()}</p>
-        </div>
-
-        <div className="space-y-4">
-          <div className="bg-gray-800 rounded p-4">
-            <div className="text-3xl font-bold">{contract.beneficiaries.length}</div>
-            <div className="text-gray-400">Number of Beneficiaries</div>
-          </div>
-          <div className="bg-gray-800 rounded p-4">
-            <div className="text-3xl font-bold">{contract.total_claim_amount}</div>
-            <div className="text-gray-400">Total Payout</div>
-          </div>
-          <div className="bg-gray-800 rounded p-4">
-            <div className="text-3xl font-bold">
-              {contract.beneficiaries.length > 0
-                ? (contract.total_claim_amount / contract.beneficiaries.length).toFixed(2)
-                : "N/A"}
-            </div>
-            <div className="text-gray-400">Individual Claim Amount</div>
-          </div>
-        </div>
+      <div className="mb-4 text-sm text-gray-300">
+        <p>Location: {contract.region?.name}</p>
+        <p>Start Date: {contract.start_date?.split("T")[0]}</p>
+        <p>End Date: {contract.end_date?.split("T")[0]}</p>
+        <p>Status: {contract.status}</p>
+        <p>Contract Address: 
+          <a
+            href={`https://blockexplorer.com/address/${contract.smart_contract_address}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-400 underline ml-1"
+          >
+            {contract.smart_contract_address}
+          </a>
+        </p>
+        <p>Transaction Hash:
+          <a
+            href={`https://blockexplorer.com/tx/${contract.transaction_hash}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-400 underline ml-1"
+          >
+            {contract.transaction_hash}
+          </a>
+        </p>
       </div>
 
-      <h3 className="mt-6 text-xl font-semibold">Beneficiaries</h3>
+      <h2 className="text-xl font-semibold mt-6">Beneficiaries</h2>
       <table className="min-w-full border mt-2">
         <thead>
           <tr className="bg-gray-800">
-            <th className="p-2 text-left">#</th>
-            <th className="p-2 text-left">Address</th>
-            <th className="p-2 text-left">Copy</th>
+            <th className="p-2 text-left">Name</th>
+            <th className="p-2 text-left">Phone</th>
+            <th className="p-2 text-left">Wallet</th>
           </tr>
         </thead>
         <tbody>
-          {paginatedBeneficiaries.map((b: string, i: number) => (
-            <tr key={i} className="border-t border-gray-700">
-              <td className="p-2">{(beneficiaryPage - 1) * pageSize + i + 1}</td>
-              <td className="p-2 truncate max-w-xs" title={b}>{b}</td>
-              <td className="p-2">
-                <button
-                  onClick={() => navigator.clipboard.writeText(b)}
-                  className="text-indigo-400 underline"
-                >
-                  Copy
-                </button>
-              </td>
+          {displayedBeneficiaries.map((b: any, idx: number) => (
+            <tr key={idx} className="border-t border-gray-700">
+              <td className="p-2">{b.name}</td>
+              <td className="p-2">{b.phone}</td>
+              <td className="p-2">{b.wallet}</td>
             </tr>
           ))}
         </tbody>
       </table>
+
       <div className="flex justify-between items-center mt-2 text-sm text-gray-400">
         <button
           onClick={() => setBeneficiaryPage((p) => Math.max(1, p - 1))}
@@ -191,7 +126,6 @@ export default function ContractDetail() {
                 <th className="p-2 text-left">Date</th>
                 <th className="p-2 text-left">Reported Value</th>
                 <th className="p-2 text-left">Calculated Payout</th>
-                <th className="p-2 text-left">Rain (mm)</th>
               </tr>
             </thead>
             <tbody>
@@ -202,7 +136,6 @@ export default function ContractDetail() {
                     <td className="p-2">{dateKey}</td>
                     <td className="p-2">{d.reported_value}</td>
                     <td className="p-2">{d.calculated_payout}</td>
-                    <td className="p-2">{weatherData[dateKey] ?? "..."}</td>
                   </tr>
                 );
               })}
