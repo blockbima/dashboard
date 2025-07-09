@@ -28,7 +28,7 @@ export default function Dashboard() {
       .catch(() => setAllContracts([]));
   }, []);
 
-  const cutoffDate = new Date("2025-06-20");
+  const cutoffDate = new Date("2025-06-24");
   const filtered = allContracts.filter((c) => {
     const created = new Date(c.created_at);
     const afterCutoff = created >= cutoffDate;
