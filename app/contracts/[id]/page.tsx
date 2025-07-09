@@ -14,6 +14,7 @@ export default function ContractDetail() {
   const pageSize = 5;
   const [beneficiaryPage, setBeneficiaryPage] = useState(1);
 
+  // 🔄 Fetch contract
   useEffect(() => {
     fetch(`/api/contracts/${id}`)
       .then((res) => {
@@ -24,79 +25,94 @@ export default function ContractDetail() {
       .catch((e) => setError(e.message));
   }, [id]);
 
-  if (error) {
-    return (
-      <div className="text-red-500 p-4">
-        <p>Error loading contract: {error}</p>
-        <button onClick={() => router.refresh()}>Retry</button>
-      </div>
-    );
-  }
+  if (error) return <div className="p-6 text-red-400">Error: {error}</div>;
+  if (!contract) return <div className="p-6 text-gray-100">Loading...</div>;
 
-  if (!contract) {
-    return <div className="p-4 text-gray-400">Loading...</div>;
-  }
+  const rawEntries = Object.entries(contract);
+  const totalFields = rawEntries.length;
+  const [keyName, keyValue] = rawEntries[fieldIdx] || ["", ""];
 
-  const totalBeneficiaryPages = Math.ceil(
-    (contract.beneficiaries?.length || 0) / pageSize
-  );
-
-  const displayedBeneficiaries = (contract.beneficiaries || []).slice(
+  const totalBeneficiaryPages = Math.ceil(contract.beneficiaries.length / pageSize);
+  const paginatedBeneficiaries = contract.beneficiaries.slice(
     (beneficiaryPage - 1) * pageSize,
     beneficiaryPage * pageSize
   );
 
   return (
-    <div className="p-4 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">{contract.name}</h1>
+    <div className="bg-gray-900 text-gray-100 min-h-screen p-6">
+      <button
+        onClick={() => router.push("/dashboard")}
+        className="mb-4 text-indigo-400 hover:underline"
+      >
+        ← Back to Dashboard
+      </button>
 
-      <div className="mb-4 text-sm text-gray-300">
-        <p>Location: {contract.region?.name}</p>
-        <p>Start Date: {contract.start_date?.split("T")[0]}</p>
-        <p>End Date: {contract.end_date?.split("T")[0]}</p>
-        <p>Status: {contract.status}</p>
-        <p>Contract Address: 
-          <a
-            href={`https://blockexplorer.com/address/${contract.smart_contract_address}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-400 underline ml-1"
-          >
-            {contract.smart_contract_address}
-          </a>
-        </p>
-        <p>Transaction Hash:
-          <a
-            href={`https://blockexplorer.com/tx/${contract.transaction_hash}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-400 underline ml-1"
-          >
-            {contract.transaction_hash}
-          </a>
-        </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div>
+          <h2 className="text-2xl font-bold mb-2">Contract {contract.id}</h2>
+          <p><strong>Region:</strong> {contract.region.name}</p>
+          <p><strong>Total Premium:</strong> {contract.total_premium}</p>
+          <p><strong>Status:</strong> {contract.is_fulfilled ? "Settled" : "Active"}</p>
+          <p><strong>Settlement Tx:</strong> {contract.settlement_transaction_id ? (
+            <a href={`https://explorer.testnet.xrplevm.org/tx/${contract.settlement_transaction_id}`}
+               target="_blank" rel="noopener noreferrer" className="text-indigo-400 underline">
+              {contract.settlement_transaction_id}
+            </a>) : "N/A"}</p>
+          <p><strong>Maturity Date:</strong> {new Date(contract.maturity_date).toLocaleDateString()}</p>
+          <p><strong>Smart Contract:</strong> {contract.smart_contract_address ? (
+            <a href={`https://explorer.testnet.xrplevm.org/address/${contract.smart_contract_address}`}
+               target="_blank" rel="noopener noreferrer" className="text-indigo-400 underline">
+              {contract.smart_contract_address}
+            </a>) : "N/A"}</p>
+          <p><strong>Created At:</strong> {new Date(contract.created_at).toLocaleDateString()}</p>
+        </div>
+
+        <div className="space-y-4">
+          <div className="bg-gray-800 rounded p-4">
+            <div className="text-3xl font-bold">{contract.beneficiaries.length}</div>
+            <div className="text-gray-400">Number of Beneficiaries</div>
+          </div>
+          <div className="bg-gray-800 rounded p-4">
+            <div className="text-3xl font-bold">{contract.total_claim_amount}</div>
+            <div className="text-gray-400">Total Payout</div>
+          </div>
+          <div className="bg-gray-800 rounded p-4">
+            <div className="text-3xl font-bold">
+              {contract.beneficiaries.length > 0
+                ? (contract.total_claim_amount / contract.beneficiaries.length).toFixed(2)
+                : "N/A"}
+            </div>
+            <div className="text-gray-400">Individual Claim Amount</div>
+          </div>
+        </div>
       </div>
 
-      <h2 className="text-xl font-semibold mt-6">Beneficiaries</h2>
+      <h3 className="mt-6 text-xl font-semibold">Beneficiaries</h3>
       <table className="min-w-full border mt-2">
         <thead>
           <tr className="bg-gray-800">
-            <th className="p-2 text-left">Name</th>
-            <th className="p-2 text-left">Phone</th>
-            <th className="p-2 text-left">Wallet</th>
+            <th className="p-2 text-left">#</th>
+            <th className="p-2 text-left">Address</th>
+            <th className="p-2 text-left">Copy</th>
           </tr>
         </thead>
         <tbody>
-          {displayedBeneficiaries.map((b: any, idx: number) => (
-            <tr key={idx} className="border-t border-gray-700">
-              <td className="p-2">{b.name}</td>
-              <td className="p-2">{b.phone}</td>
-              <td className="p-2">{b.wallet}</td>
+          {paginatedBeneficiaries.map((b: string, i: number) => (
+            <tr key={i} className="border-t border-gray-700">
+              <td className="p-2">{(beneficiaryPage - 1) * pageSize + i + 1}</td>
+              <td className="p-2 truncate max-w-xs" title={b}>{b}</td>
+              <td className="p-2">
+                <button
+                  onClick={() => navigator.clipboard.writeText(b)}
+                  className="text-indigo-400 underline"
+                >
+                  Copy
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
-
       <div className="flex justify-between items-center mt-2 text-sm text-gray-400">
         <button
           onClick={() => setBeneficiaryPage((p) => Math.max(1, p - 1))}
