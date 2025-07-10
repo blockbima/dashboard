@@ -1,4 +1,3 @@
-// app/dashboard/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -20,12 +19,20 @@ export default function Dashboard() {
   const [pageNum, setPageNum] = useState(1);
   const pageSize = 10;
   const router = useRouter();
+  const [lastFetched, setLastFetched] = useState<Date | null>(null);
 
-  useEffect(() => {
+  const fetchContracts = () => {
     fetch("/api/contracts")
       .then((res) => res.json())
-      .then((data) => setAllContracts(data.contracts || []))
+      .then((data) => {
+        setAllContracts(data.contracts || []);
+        setLastFetched(new Date());
+      })
       .catch(() => setAllContracts([]));
+  };
+
+  useEffect(() => {
+    fetchContracts();
   }, []);
 
   const cutoffDate = new Date("2025-06-24");
@@ -63,7 +70,7 @@ export default function Dashboard() {
   return (
     <div className="bg-gray-900 text-gray-100 space-y-6 min-h-screen p-6">
       {/* Controls */}
-      <div className="flex gap-4">
+      <div className="flex flex-wrap gap-4 items-center">
         <input
           placeholder="Search by ID or beneficiary"
           value={searchTerm}
@@ -91,10 +98,21 @@ export default function Dashboard() {
         <CSVLink
           data={sorted}
           filename="contracts.csv"
-          className="ml-auto bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1 rounded"
+          className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1 rounded"
         >
           Export CSV
         </CSVLink>
+        <button
+          onClick={fetchContracts}
+          className="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded"
+        >
+          Reload
+        </button>
+        {lastFetched && (
+          <span className="text-sm text-gray-400 ml-2">
+            Last updated: {lastFetched.toLocaleTimeString()}
+          </span>
+        )}
       </div>
 
       {/* Table */}
@@ -102,7 +120,7 @@ export default function Dashboard() {
         <table className="min-w-full">
           <thead>
             <tr className="bg-gray-800">
-              {[
+              {[ 
                 { key: "region", label: "Region" },
                 { key: "beneficiaries", label: "Beneficiaries" },
                 { key: "total_premium", label: "Premium" },
