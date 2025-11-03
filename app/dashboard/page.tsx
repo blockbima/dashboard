@@ -124,7 +124,7 @@ export default function Dashboard() {
                 { key: "region", label: "Region" },
                 { key: "beneficiaries", label: "Beneficiaries" },
                 { key: "total_premium", label: "Premium" },
-                { key: "total_claim_amount", label: "Payout" },
+                { key: "settlement_amount", label: "Payout" },
                 { key: "is_fulfilled", label: "Status" },
                 { key: "created_at", label: "Created At" },
               ].map(({ key, label }) => (
